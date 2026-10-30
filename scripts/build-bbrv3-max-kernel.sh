@@ -48,9 +48,9 @@ bash "$repo_root/scripts/apply-bbrv3-max-profile.sh"
 
 grep -v "MODULE_DESCRIPTION" net/ipv4/tcp_bbr.c > net/ipv4/tcp_bbr.c.tmp
 mv net/ipv4/tcp_bbr.c.tmp net/ipv4/tcp_bbr.c
-echo 'MODULE_DESCRIPTION("TCP BBR v3 Max - aggressive throughput profile by Joey");' >> net/ipv4/tcp_bbr.c
+echo 'MODULE_DESCRIPTION("TCP BBR v3 Max - aggressive throughput profile by brian952700");' >> net/ipv4/tcp_bbr.c
 
-export KBUILD_BUILD_USER=byjoey
+export KBUILD_BUILD_USER=brian952700
 export KBUILD_BUILD_HOST=actions-bbr-v3
 
 export GITHUB_WORKSPACE="$repo_root"
@@ -59,9 +59,9 @@ bash "$repo_root/scripts/prepare-kernel-config.sh" "$config_arch"
 bash "$repo_root/scripts/prepare-kernel-packaging.sh"
 
 if [[ "$build_arch" == "arm64" ]]; then
-  make ARCH=arm64 bindeb-pkg -j"$(nproc)" LOCALVERSION=-joeyblog-bbrv3-max KDEB_COMPRESS=gzip skipdbg=true
+  make ARCH=arm64 bindeb-pkg -j"$(nproc)" LOCALVERSION=-brian952700-bbrv3-max KDEB_COMPRESS=gzip skipdbg=true
 else
-  make bindeb-pkg -j"$(nproc)" LOCALVERSION=-joeyblog-bbrv3-max KDEB_COMPRESS=gzip skipdbg=true
+  make bindeb-pkg -j"$(nproc)" LOCALVERSION=-brian952700-bbrv3-max KDEB_COMPRESS=gzip skipdbg=true
 fi
 
 if find "$build_dir" -maxdepth 1 \( -name '*-dbg*.deb' -o -name '*-dbgsym*.deb' \) | grep -q .; then
