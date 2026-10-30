@@ -1,11 +1,15 @@
-# BBRv3 管理脚本
+# Brian BBRv3 管理脚本
 
-一个用于 Debian/Ubuntu VPS 的 BBRv3 内核安装与网络加速管理脚本。
+由 [brian952700](https://github.com/brian952700) 维护，用于 Debian/Ubuntu VPS 的 BBRv3 内核安装与网络加速管理脚本。
+
+基于 [byJoey/Actions-bbr-v3](https://github.com/byJoey/Actions-bbr-v3) 二次维护，保留上游来源与 LICENSE。本文中的历史问题链接指向上游讨论。
+
+[下载内核](https://github.com/brian952700/Actions-bbr-v3/releases) · [构建状态](https://github.com/brian952700/Actions-bbr-v3/actions/workflows/build.yml) · [反馈与交流](https://github.com/brian952700/Actions-bbr-v3/pulls)
 
 脚本入口：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/byJoey/Actions-bbr-v3/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/brian952700/Actions-bbr-v3/main/install.sh)
 ```
 
 首次运行后脚本会自动安装联网快捷命令，后续可直接运行：
@@ -17,6 +21,20 @@ b
 快捷命令每次都会从 GitHub 拉取最新版脚本执行，不使用本地缓存脚本。
 
 脚本会自动识别当前系统架构，从本仓库 GitHub Releases 下载匹配的 BBRv3 内核 `.deb` 包，并提供安装、指定版本安装、状态检查、加速模式切换和卸载功能。安装内核时可选择标准 BBRv3 或 BBRv3 Max 激进吞吐内核。
+
+## 下载与首次构建
+
+- 一键命令下载并进入交互菜单，选择 `1` 后才安装内核。请使用 root 或具备 sudo 权限的账户。
+- [脚本直接下载](https://raw.githubusercontent.com/brian952700/Actions-bbr-v3/main/install.sh)
+- [内核安装包下载](https://github.com/brian952700/Actions-bbr-v3/releases)：按架构选择 `x86_64` 或 `arm64`，`-max` 标签为 Max 版。
+- Fork 不会复制上游 Release。首次使用前，维护者需在 [Actions](https://github.com/brian952700/Actions-bbr-v3/actions/workflows/build.yml) 启用工作流，点击 **Run workflow**，等待四种架构/配置组合发布成功。之后每天北京时间 11:17 检查更新，GitHub 调度可能延迟。
+- 本分支只从 `brian952700/Actions-bbr-v3` 下载脚本和内核，不会回退到上游 Release。新构建内核后缀为 `-brian952700-bbrv3` / `-brian952700-bbrv3-max`。旧版上游内核及其配置不属于本分支的管理范围。
+
+也可下载成功后再执行：
+
+```bash
+curl -fL --retry 3 -o /tmp/brian-bbr-install.sh https://raw.githubusercontent.com/brian952700/Actions-bbr-v3/main/install.sh && bash /tmp/brian-bbr-install.sh
+```
 
 ## 支持环境
 
@@ -100,7 +118,7 @@ linux-7.3.y -> patches/bbrv3-linux-7.3.patch
 ## 安装最新版
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/byJoey/Actions-bbr-v3/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/brian952700/Actions-bbr-v3/main/install.sh)
 ```
 
 首次运行后也可以直接输入：
@@ -132,7 +150,7 @@ b
 
 ```bash
 export GITHUB_TOKEN=你的 GitHub Token
-bash <(curl -fsSL https://raw.githubusercontent.com/byJoey/Actions-bbr-v3/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/brian952700/Actions-bbr-v3/main/install.sh)
 ```
 
 ## 指定版本安装
@@ -208,7 +226,7 @@ cat /proc/version
 选择后脚本会立即尝试应用配置，并询问是否永久写入：
 
 ```text
-/etc/sysctl.d/99-joeyblog.conf
+/etc/sysctl.d/99-brian952700.conf
 ```
 
 脚本不仅会写入 `net.core.default_qdisc`，还会尝试把当前默认路由出口网卡的 root qdisc 立即替换为所选算法，避免只对新建队列生效、当前网卡实际仍保持旧队列。
@@ -216,7 +234,7 @@ cat /proc/version
 对于需要模块加载的队列算法，脚本会尝试加载对应 `sch_*` 模块，并在需要时写入：
 
 ```text
-/etc/modules-load.d/joeyblog-qdisc.conf
+/etc/modules-load.d/brian952700-qdisc.conf
 ```
 
 ## 亚太机器 TCP 调优
@@ -239,7 +257,7 @@ net.ipv4.tcp_slow_start_after_idle = 0
 配置文件路径：
 
 ```text
-/etc/sysctl.d/99-joeyblog.conf
+/etc/sysctl.d/99-brian952700.conf
 ```
 
 ## BBR v3 智能带宽优化
@@ -274,7 +292,7 @@ net.ipv4.tcp_slow_start_after_idle = 0
 配置同样写入：
 
 ```text
-/etc/sysctl.d/99-joeyblog.conf
+/etc/sysctl.d/99-brian952700.conf
 ```
 
 ## BBR v3 疯批模式
@@ -313,7 +331,7 @@ net.ipv4.tcp_moderate_rcvbuf = 1
 net.ipv4.tcp_ecn = 0
 ```
 
-脚本还会把当前默认出口网卡的运行态 `txqueuelen` 拉高到 `100000`，让测速时本机发送队列更激进。该项不是 sysctl 参数，不会写入 `/etc/sysctl.d/99-joeyblog.conf`。
+脚本还会把当前默认出口网卡的运行态 `txqueuelen` 拉高到 `100000`，让测速时本机发送队列更激进。该项不是 sysctl 参数，不会写入 `/etc/sysctl.d/99-brian952700.conf`。
 
 其中核心参数应用失败会中止；不同内核可能不支持部分附加参数，脚本会尽量写入，失败的附加项不会阻断整个模式。
 
@@ -346,7 +364,7 @@ net.ipv4.tcp_ecn = 0
 同时删除：
 
 ```text
-/etc/modules-load.d/joeyblog-qdisc.conf
+/etc/modules-load.d/brian952700-qdisc.conf
 ```
 
 该功能只清空网络优化配置，不卸载 BBR 内核，也不移除 Dirty Frag 安全缓解规则或 IPv6 开关配置。当前运行态参数可能需要重启后完全恢复为系统默认值。
@@ -356,12 +374,12 @@ net.ipv4.tcp_ecn = 0
 菜单 `13` 会在确认后禁用当前接口和以后新建接口的 IPv6，配置独立保存到：
 
 ```text
-/etc/sysctl.d/99-joeyblog-ipv6.conf
+/etc/sysctl.d/99-brian952700-ipv6.conf
 ```
 
 当前 SSH 连接使用 IPv6，或机器没有 IPv4 默认路由时，脚本会拒绝禁用，避免直接切断管理连接。需要 IPv6 的服务和客户端也会受影响，执行前请确认用途。
 
-首次禁用前，脚本会把 `all`、`default` 和当前各接口的 `disable_ipv6` 原值保存到 `/var/lib/joeyblog/ipv6-before-disable`，重复禁用不会覆盖这份快照。
+首次禁用前，脚本会把 `all`、`default` 和当前各接口的 `disable_ipv6` 原值保存到 `/var/lib/brian952700/ipv6-before-disable`，重复禁用不会覆盖这份快照。
 
 菜单 `14` 撤回本项目的 IPv6 配置，先恢复 `all`、`default`，再逐接口恢复原值，最后重新加载系统的其他 sysctl 规则。已消失的接口跳过，新接口沿用原来的 `default` 设置。原有或其他持久规则仍禁用 IPv6 的接口会单独列出，脚本不会删除那些规则。恢复失败时保留快照供重试，成功后删除。菜单 `11` 清空网络优化时会保留这个独立开关。
 
@@ -370,7 +388,7 @@ net.ipv4.tcp_ecn = 0
 脚本启动时会写入 Dirty Frag 风险面收敛规则：
 
 ```text
-/etc/modprobe.d/99-joeyblog-security.conf
+/etc/modprobe.d/99-brian952700-security.conf
 ```
 
 包含：
@@ -394,7 +412,7 @@ CVE-2026-31431 对应的 AEAD userspace 接口在新构建内核中由内核配�
 
 ```bash
 command -v python3 >/dev/null 2>&1 || (sudo apt update && sudo apt install -y python3)
-curl -fsSL -o cve_2026_31431_detector.py https://raw.githubusercontent.com/byJoey/Actions-bbr-v3/main/cve_2026_31431_detector.py
+curl -fsSL -o cve_2026_31431_detector.py https://raw.githubusercontent.com/brian952700/Actions-bbr-v3/main/cve_2026_31431_detector.py
 chmod +x cve_2026_31431_detector.py
 sudo python3 cve_2026_31431_detector.py
 ```
@@ -412,7 +430,7 @@ sudo python3 cve_2026_31431_detector.py
 - 关闭 debug info。
 - 拒绝发布 `*-dbg*.deb` / `*-dbgsym*.deb`。
 
-构建不会自动更新 BBR patch 本身，也不会把另一个版本的源码改成预期版本号发布。构建用户名与主机名固定为 `byjoey@actions-bbr-v3`；编译器版本保留真实来源。
+构建不会自动更新 BBR patch 本身，也不会把另一个版本的源码改成预期版本号发布。构建用户名与主机名固定为 `brian952700@actions-bbr-v3`；编译器版本保留真实来源。
 
 ## 安装失败与云平台恢复
 
@@ -461,17 +479,11 @@ grep -E '^CONFIG_(HYPERV|HYPERV_STORAGE|HYPERV_NET|PCI_HYPERV|SCSI|BLK_DEV_SD|NV
 9. 卸载 BBR 内核
 ```
 
-脚本会卸载由本项目安装的 `joeyblog` 内核包，并更新引导配置。卸载后建议重启。
+脚本会卸载由本项目安装的 `brian952700` 内核包，并更新引导配置。卸载后建议重启。
 
 ## 反馈
 
-博客：
-
-[JoeyBlog](https://joeyblog.net)
-
-反馈群组：
-
-[Telegram Feedback Group](https://t.me/+ft-zI76oovgwNmRh)
+请通过 [本仓库 Pull Requests](https://github.com/brian952700/Actions-bbr-v3/pulls) 提交修复建议，或联系 [维护者 brian952700](https://github.com/brian952700)。
 
 ## 免责声明
 
@@ -479,10 +491,10 @@ grep -E '^CONFIG_(HYPERV|HYPERV_STORAGE|HYPERV_NET|PCI_HYPERV|SCSI|BLK_DEV_SD|NV
 
 ## Star History
 
-<a href="https://star-history.dera.page/#byJoey/Actions-bbr-v3&Timeline">
+<a href="https://star-history.dera.page/#brian952700/Actions-bbr-v3&Timeline">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=byJoey/Actions-bbr-v3&type=Timeline&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=byJoey/Actions-bbr-v3&type=Timeline" />
-   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=byJoey/Actions-bbr-v3&type=Timeline" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=brian952700/Actions-bbr-v3&type=Timeline&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=brian952700/Actions-bbr-v3&type=Timeline" />
+   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=brian952700/Actions-bbr-v3&type=Timeline" />
  </picture>
 </a>

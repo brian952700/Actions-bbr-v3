@@ -38,21 +38,22 @@ CURRENT_ALGO=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
 CURRENT_QDISC=$(sysctl net.core.default_qdisc | awk '{print $3}')
 
 # sysctl 配置文件路径
-SYSCTL_CONF="/etc/sysctl.d/99-joeyblog.conf"
+SYSCTL_CONF="/etc/sysctl.d/99-brian952700.conf"
 # 模块自动加载配置文件路径
-MODULES_CONF="/etc/modules-load.d/joeyblog-qdisc.conf"
+MODULES_CONF="/etc/modules-load.d/brian952700-qdisc.conf"
 # IPv6 开关使用独立文件，恢复时不改用户自己的 sysctl 配置
-IPV6_CONF="/etc/sysctl.d/99-joeyblog-ipv6.conf"
+IPV6_CONF="/etc/sysctl.d/99-brian952700-ipv6.conf"
 IPV6_PROC_DIR="/proc/sys/net/ipv6/conf"
-IPV6_STATE_FILE="/var/lib/joeyblog/ipv6-before-disable"
+IPV6_STATE_FILE="/var/lib/brian952700/ipv6-before-disable"
 BOOT_DIR="/boot"
-BOOT_BACKUP_DIR="/var/backups/joeyblog-kernel"
+BOOT_BACKUP_DIR="/var/backups/brian952700-kernel"
 DKMS_STATE_DIR="/var/lib/dkms"
 DMI_VENDOR_FILE="/sys/class/dmi/id/sys_vendor"
 # 安全加固配置（Dirty Frag 风险面收敛）
-SECURITY_MODPROBE_CONF="/etc/modprobe.d/99-joeyblog-security.conf"
+SECURITY_MODPROBE_CONF="/etc/modprobe.d/99-brian952700-security.conf"
 # 脚本远程入口和本地快捷命令
-INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/byJoey/Actions-bbr-v3/main/install.sh"
+PROJECT_REPO="brian952700/Actions-bbr-v3"
+INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${PROJECT_REPO}/main/install.sh"
 QUICK_COMMAND_PATH="/usr/local/bin/b"
 # 可选：提升 GitHub API 限额（支持 GITHUB_TOKEN / GH_TOKEN）
 GITHUB_API_TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
@@ -1103,18 +1104,18 @@ ask_to_save() {
     fi
 }
 
-# 函数：获取已安装的 joeyblog 内核版本
+# 函数：获取已安装的 brian952700 内核版本
 get_installed_version() {
     local profile="${1:-any}"
     local versions
 
-    versions=$(dpkg -l 2>/dev/null | awk '/^ii/ && $2 ~ /^linux-image-/ && $2 ~ /joeyblog/ {sub(/^linux-image-/, "", $2); print $2}')
+    versions=$(dpkg -l 2>/dev/null | awk '/^ii/ && $2 ~ /^linux-image-/ && $2 ~ /brian952700/ {sub(/^linux-image-/, "", $2); print $2}')
     case "$profile" in
         standard)
-            echo "$versions" | grep -E -- '-joeyblog-bbrv3$' | sort -V | tail -n 1
+            echo "$versions" | grep -E -- '-brian952700-bbrv3$' | sort -V | tail -n 1
             ;;
         max)
-            echo "$versions" | grep -E -- '-joeyblog-bbrv3-max$' | sort -V | tail -n 1
+            echo "$versions" | grep -E -- '-brian952700-bbrv3-max$' | sort -V | tail -n 1
             ;;
         *)
             echo "$versions" | sort -V | tail -n 1
@@ -1147,9 +1148,9 @@ get_expected_installed_version() {
     version="${version%-max}"
 
     if [[ "$profile" == "max" ]]; then
-        echo "${version}-joeyblog-bbrv3-max"
+        echo "${version}-brian952700-bbrv3-max"
     else
-        echo "${version}-joeyblog-bbrv3"
+        echo "${version}-brian952700-bbrv3"
     fi
 }
 
@@ -1239,12 +1240,12 @@ validate_kernel_packages() {
             return 1
         fi
         case "$package_name" in
-            linux-image-*-joeyblog-bbrv3|linux-image-*-joeyblog-bbrv3-max)
+            linux-image-*-brian952700-bbrv3|linux-image-*-brian952700-bbrv3-max)
                 [[ -z "$image_file" ]] || { echo '安装目录包含多个内核镜像，已停止。'; return 1; }
                 image_file="$deb_file"
                 KERNEL_PACKAGE_RELEASE="${package_name#linux-image-}"
                 ;;
-            linux-headers-*-joeyblog-bbrv3|linux-headers-*-joeyblog-bbrv3-max)
+            linux-headers-*-brian952700-bbrv3|linux-headers-*-brian952700-bbrv3-max)
                 headers_found=$((headers_found + 1))
                 ;;
             *) echo "拒绝安装不属于目标内核的包：$package_name"; return 1 ;;
@@ -1428,7 +1429,7 @@ install_latest_version() {
     profile_label=$(get_profile_label "$profile")
 
     echo -e "\033[36m正在从 GitHub 获取 ${profile_label} 最新版本信息...\033[0m"
-    BASE_URL="https://api.github.com/repos/byJoey/Actions-bbr-v3/releases"
+    BASE_URL="https://api.github.com/repos/${PROJECT_REPO}/releases"
     RELEASE_DATA=$(gh_api_get "$BASE_URL")
     if [[ -z "$RELEASE_DATA" ]]; then
         echo -e "\033[31m从 GitHub 获取版本信息失败。请检查网络连接或 API 状态。\033[0m"
@@ -1447,7 +1448,7 @@ install_latest_version() {
     ')
 
     if [[ -z "$LATEST_TAG_NAME" || "$LATEST_TAG_NAME" == "null" ]]; then
-        echo -e "\033[31m未找到适合当前架构 ($ARCH) 的 ${profile_label} 最新版本。\033[0m"
+        echo -e "\033[31m未找到适合当前架构 ($ARCH) 的 ${profile_label} 最新版本。请先在本仓库 Actions 完成构建：https://github.com/${PROJECT_REPO}/actions/workflows/build.yml\033[0m"
         return 1
     fi
     echo -e "\033[36m检测到最新版本：\033[0m\033[1;32m$LATEST_TAG_NAME\033[0m"
@@ -1476,7 +1477,7 @@ install_specific_version() {
     assert_supported_kernel_install_system || return 1
     profile_label=$(get_profile_label "$profile")
 
-    BASE_URL="https://api.github.com/repos/byJoey/Actions-bbr-v3/releases"
+    BASE_URL="https://api.github.com/repos/${PROJECT_REPO}/releases"
     RELEASE_DATA=$(gh_api_get "$BASE_URL")
     if [[ -z "$RELEASE_DATA" ]]; then
         echo -e "\033[31m从 GitHub 获取版本信息失败。请检查网络连接或 API 状态。\033[0m"
@@ -1493,7 +1494,7 @@ install_specific_version() {
     ')
 
     if [[ -z "$MATCH_TAGS" ]]; then
-        echo -e "\033[31m未找到适合当前架构的 ${profile_label} 版本。\033[0m"
+        echo -e "\033[31m未找到适合当前架构的 ${profile_label} 版本。下载与构建状态：https://github.com/${PROJECT_REPO}/releases\033[0m"
         return 1
     fi
 
@@ -1535,7 +1536,7 @@ print_separator
 echo -e "\033[36m当前 TCP 拥塞控制算法：\033[0m\033[1;32m$CURRENT_ALGO\033[0m"
 echo -e "\033[36m当前队列管理算法：    \033[0m\033[1;32m$CURRENT_QDISC\033[0m"
 print_separator
-echo -e "\033[1;33m作者：Joey  |  博客：https://joeyblog.net  |  反馈群组：https://t.me/+ft-zI76oovgwNmRh\033[0m"
+echo -e "\033[1;33m维护：brian952700  |  仓库：https://github.com/brian952700/Actions-bbr-v3\033[0m"
 print_separator
 
 echo -e "\033[1;33m╭( ･ㅂ･)و ✧ 你可以选择以下操作哦：\033[0m"
@@ -1637,14 +1638,14 @@ case "$ACTION" in
         ;;
     9)
         echo -e "\033[1;32mヽ(・∀・)ノ 您选择了卸载 BBR 内核！\033[0m"
-        PACKAGES_TO_REMOVE=$(dpkg -l | grep "joeyblog" | awk '{print $2}' | tr '\n' ' ')
+        PACKAGES_TO_REMOVE=$(dpkg -l | grep "brian952700" | awk '{print $2}' | tr '\n' ' ')
         if [[ -n "$PACKAGES_TO_REMOVE" ]]; then
             echo -e "\033[36m将要卸载以下内核包: \033[33m$PACKAGES_TO_REMOVE\033[0m"
             sudo apt-get remove --purge $PACKAGES_TO_REMOVE -y
             update_bootloader
             echo -e "\033[1;32m内核包已卸载。请记得重启系统。\033[0m"
         else
-            echo -e "\033[33m未找到由本脚本安装的 'joeyblog' 内核包。\033[0m"
+            echo -e "\033[33m未找到由本脚本安装的 'brian952700' 内核包。\033[0m"
         fi
         ;;
     10)
