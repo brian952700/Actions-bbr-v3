@@ -6,8 +6,8 @@ test_root=$(mktemp -d)
 trap 'rm -rf "$test_root"' EXIT
 upstream="$test_root/upstream"
 git init --quiet "$upstream"
-git -C "$upstream" config user.name byjoey
-git -C "$upstream" config user.email huangjoey98@gmail.com
+git -C "$upstream" config user.name brian952700
+git -C "$upstream" config user.email bbr-tests@example.invalid
 export KERNEL_GIT_URL="file://$upstream"
 
 write_version() {

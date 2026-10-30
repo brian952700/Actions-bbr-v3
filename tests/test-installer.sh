@@ -15,12 +15,12 @@ setup_fixture() {
     BOOT_DIR="$CASE_DIR/boot"
     BOOT_BACKUP_DIR="$CASE_DIR/backups"
     DKMS_STATE_DIR="$CASE_DIR/dkms"
-    IPV6_CONF="$CASE_DIR/99-joeyblog-ipv6.conf"
+    IPV6_CONF="$CASE_DIR/99-brian952700-ipv6.conf"
     IPV6_PROC_DIR="$CASE_DIR/proc-ipv6"
     IPV6_STATE_FILE="$CASE_DIR/state/ipv6-before-disable"
     PACKAGE_DIR="$CASE_DIR/packages"
     COMMAND_LOG="$CASE_DIR/commands"
-    RELEASE='7.3.1-joeyblog-bbrv3'
+    RELEASE='7.3.1-brian952700-bbrv3'
     MOCK_DPKG_FAILURE=0
     MOCK_AUDIT=''
     MOCK_HYPERV=0
@@ -177,12 +177,12 @@ test_azure_requires_drivers_before_install() (
 test_azure_vmbus_config_versions() (
     setup_fixture
     MOCK_HYPERV=1
-    KERNEL_PACKAGE_RELEASE='7.2.10-joeyblog-bbrv3'
+    KERNEL_PACKAGE_RELEASE='7.2.10-brian952700-bbrv3'
     sed '/CONFIG_HYPERV_VMBUS=/d' "$CASE_DIR/payload/boot/config-$RELEASE" > "$CASE_DIR/no-vmbus.config"
     cat "$CASE_DIR/no-vmbus.config" > "$CASE_DIR/disabled-vmbus.config"
     echo '# CONFIG_HYPERV_VMBUS is not set' >> "$CASE_DIR/disabled-vmbus.config"
     expect_failure assert_cloud_kernel_config "$CASE_DIR/disabled-vmbus.config" > "$CASE_DIR/output"
-    KERNEL_PACKAGE_RELEASE='6.1.0-joeyblog-bbrv3'
+    KERNEL_PACKAGE_RELEASE='6.1.0-brian952700-bbrv3'
     assert_cloud_kernel_config "$CASE_DIR/no-vmbus.config"
 )
 
@@ -190,7 +190,7 @@ test_package_pair_must_be_complete_and_match() (
     setup_fixture
     rm "$PACKAGE_DIR/linux-headers-$RELEASE.deb"
     expect_failure install_packages "$PACKAGE_DIR" > "$CASE_DIR/output"
-    touch "$PACKAGE_DIR/linux-headers-7.2.8-joeyblog-bbrv3.deb"
+    touch "$PACKAGE_DIR/linux-headers-7.2.8-brian952700-bbrv3.deb"
     expect_failure install_packages "$PACKAGE_DIR" > "$CASE_DIR/output"
     [[ ! -s "$COMMAND_LOG" ]] || fail '缺 headers 或版本错配仍执行了安装'
 )
@@ -265,7 +265,7 @@ test_real_deb_package_metadata() (
     fi
     local fixture_dir release host_arch package_name root_dir
     fixture_dir=$(mktemp -d "$TEST_DIR/real-deb.XXXXXX")
-    release='7.3.1-joeyblog-bbrv3'
+    release='7.3.1-brian952700-bbrv3'
     host_arch=$(dpkg --print-architecture)
     mkdir -p "$fixture_dir/packages"
     for package_name in "linux-image-$release" "linux-headers-$release"; do
@@ -295,9 +295,9 @@ test_download_filters_and_isolates_packages() (
     download_log="$fixture_dir/downloads"
     : > "$download_log"
     release_json='[{"tag_name":"x86_64-7.3.1","assets":[
-      {"name":"linux-image-7.3.1-joeyblog-bbrv3_7.3.1-1_amd64.deb","browser_download_url":"https://example.invalid/linux-image-7.3.1-joeyblog-bbrv3_7.3.1-1_amd64.deb"},
-      {"name":"linux-headers-7.3.1-joeyblog-bbrv3_7.3.1-1_amd64.deb","browser_download_url":"https://example.invalid/linux-headers-7.3.1-joeyblog-bbrv3_7.3.1-1_amd64.deb"},
-      {"name":"linux-image-7.3.1-joeyblog-bbrv3-dbg_7.3.1-1_amd64.deb","browser_download_url":"https://example.invalid/debug.deb"},
+      {"name":"linux-image-7.3.1-brian952700-bbrv3_7.3.1-1_amd64.deb","browser_download_url":"https://example.invalid/linux-image-7.3.1-brian952700-bbrv3_7.3.1-1_amd64.deb"},
+      {"name":"linux-headers-7.3.1-brian952700-bbrv3_7.3.1-1_amd64.deb","browser_download_url":"https://example.invalid/linux-headers-7.3.1-brian952700-bbrv3_7.3.1-1_amd64.deb"},
+      {"name":"linux-image-7.3.1-brian952700-bbrv3-dbg_7.3.1-1_amd64.deb","browser_download_url":"https://example.invalid/debug.deb"},
       {"name":"linux-libc-dev_7.3.1-1_amd64.deb","browser_download_url":"https://example.invalid/libc.deb"},
       {"name":"x86_64-7.3.1.config","browser_download_url":"https://example.invalid/kernel.config"}]}]'
     wget() { printf '%s\n' "$3" >> "$download_log"; [[ "$4" == -O ]] || return 1; touch "$5"; }
