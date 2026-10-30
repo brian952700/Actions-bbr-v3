@@ -1,0 +1,25 @@
+name: 验证安装脚本
+on:
+  push:
+    paths:
+      - '**.sh'
+      - '.github/workflows/**'
+      - '.gitattributes'
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: 检查 Bash 语法
+        run: |
+          bash -n install.sh
+          for script in scripts/*.sh tests/*.sh; do bash -n "$script"; done
+      - name: 运行回归测试
+        run: |
+          bash tests/test-kernel-source.sh
+          bash tests/test-installer.sh
+          bash tests/test-cloud-config.sh
