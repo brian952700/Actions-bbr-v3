@@ -1520,42 +1520,69 @@ install_specific_version() {
     download_and_install_release "$RELEASE_DATA" "$SELECTED_TAG"
 }
 
-# 美化输出的分隔线
-print_separator() {
-    echo -e "\033[34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+# 一次输出完整菜单，减少 SSH 终端的逐行刷新。
+print_main_menu() {
+    if [[ "${BBR_PLAIN_MENU:-0}" == 1 ]]; then
+        printf '%s\n%s' "BBR 管理脚本
+当前 TCP 拥塞控制算法：$CURRENT_ALGO
+当前队列管理算法：$CURRENT_QDISC
+仓库：https://github.com/$PROJECT_REPO
+-------------------------------------------------
+ 1. 安装或更新 BBR v3 (最新版)
+ 2. 指定版本安装
+ 3. 检查 BBR v3 状态
+ 4. 启用 BBR + FQ
+ 5. 启用 BBR + FQ_CODEL
+ 6. 启用 BBR + FQ_PIE
+ 7. 启用 BBR + CAKE
+ 8. 亚太机器 TCP 调优
+ 9. 卸载 BBR 内核
+10. BBR v3 智能带宽优化
+11. 清空网络优化配置
+12. BBR v3 疯批模式（极限测速挑战）
+13. 禁用 IPv6（保留 IPv4）
+14. 恢复 IPv6
+-------------------------------------------------" '请选择一个操作 (1-14): '
+        return
+    fi
+
+    local separator=$'\033[34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m'
+    printf '%b' "$separator
+\033[1;35m(☆ω☆)✧*｡ 欢迎来到 BBR 管理脚本世界哒！ ✧*｡(☆ω☆)\033[0m
+$separator
+\033[36m当前 TCP 拥塞控制算法：\033[0m\033[1;32m$CURRENT_ALGO\033[0m
+\033[36m当前队列管理算法：    \033[0m\033[1;32m$CURRENT_QDISC\033[0m
+$separator
+\033[1;33m维护：brian952700  |  仓库：https://github.com/$PROJECT_REPO\033[0m
+$separator
+
+\033[1;33m╭( ･ㅂ･)و ✧ 你可以选择以下操作哦：\033[0m
+\033[33m 1. 🚀 安装或更新 BBR v3 (最新版)\033[0m
+\033[33m 2. 📚 指定版本安装\033[0m
+\033[33m 3. 🔍 检查 BBR v3 状态\033[0m
+\033[33m 4. ⚡ 启用 BBR + FQ\033[0m
+\033[33m 5. ⚡ 启用 BBR + FQ_CODEL\033[0m
+\033[33m 6. ⚡ 启用 BBR + FQ_PIE\033[0m
+\033[33m 7. ⚡ 启用 BBR + CAKE\033[0m
+\033[33m 8. 🌏 亚太机器 TCP 调优\033[0m
+\033[33m 9. 🗑️  卸载 BBR 内核\033[0m
+\033[33m10. 🧠 BBR v3 智能带宽优化\033[0m
+\033[33m11. 🧹 清空网络优化配置\033[0m
+\033[33m12. 🧨 BBR v3 疯批模式（极限测速挑战）\033[0m
+\033[33m13. 禁用 IPv6（保留 IPv4）\033[0m
+\033[33m14. 恢复 IPv6\033[0m
+$separator
+\033[36m请选择一个操作 (1-14) (｡･ω･｡): \033[0m"
 }
 
 # --- 主要执行流程 ---
 
-clear
+if [[ "${BBR_PLAIN_MENU:-0}" != 1 ]]; then
+    clear
+fi
 install_quick_command
 apply_security_mitigations
-print_separator
-echo -e "\033[1;35m(☆ω☆)✧*｡ 欢迎来到 BBR 管理脚本世界哒！ ✧*｡(☆ω☆)\033[0m"
-print_separator
-echo -e "\033[36m当前 TCP 拥塞控制算法：\033[0m\033[1;32m$CURRENT_ALGO\033[0m"
-echo -e "\033[36m当前队列管理算法：    \033[0m\033[1;32m$CURRENT_QDISC\033[0m"
-print_separator
-echo -e "\033[1;33m维护：brian952700  |  仓库：https://github.com/brian952700/Actions-bbr-v3\033[0m"
-print_separator
-
-echo -e "\033[1;33m╭( ･ㅂ･)و ✧ 你可以选择以下操作哦：\033[0m"
-echo -e "\033[33m 1. 🚀 安装或更新 BBR v3 (最新版)\033[0m"
-echo -e "\033[33m 2. 📚 指定版本安装\033[0m"
-echo -e "\033[33m 3. 🔍 检查 BBR v3 状态\033[0m"
-echo -e "\033[33m 4. ⚡ 启用 BBR + FQ\033[0m"
-echo -e "\033[33m 5. ⚡ 启用 BBR + FQ_CODEL\033[0m"
-echo -e "\033[33m 6. ⚡ 启用 BBR + FQ_PIE\033[0m"
-echo -e "\033[33m 7. ⚡ 启用 BBR + CAKE\033[0m"
-echo -e "\033[33m 8. 🌏 亚太机器 TCP 调优\033[0m"
-echo -e "\033[33m 9. 🗑️  卸载 BBR 内核\033[0m"
-echo -e "\033[33m10. 🧠 BBR v3 智能带宽优化\033[0m"
-echo -e "\033[33m11. 🧹 清空网络优化配置\033[0m"
-echo -e "\033[33m12. 🧨 BBR v3 疯批模式（极限测速挑战）\033[0m"
-echo -e "\033[33m13. 禁用 IPv6（保留 IPv4）\033[0m"
-echo -e "\033[33m14. 恢复 IPv6\033[0m"
-print_separator
-echo -n -e "\033[36m请选择一个操作 (1-14) (｡･ω･｡): \033[0m"
+print_main_menu
 read -r ACTION
 
 case "$ACTION" in
