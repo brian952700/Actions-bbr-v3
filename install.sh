@@ -72,6 +72,30 @@ gh_api_get() {
     fi
 }
 
+MENU_HAS_TTY=0
+[[ -t 1 ]] && MENU_HAS_TTY=1
+
+# 仅在支持颜色的交互终端中添加颜色。
+terminal_label() {
+    if [[ "${MENU_HAS_TTY:-0}" == 1 && -n "${TERM:-}" && "${TERM:-}" != dumb && -z "${NO_COLOR:-}" ]]; then
+        printf '\033[%sm%s\033[0m' "$1" "$2"
+    else
+        printf '%s' "$2"
+    fi
+}
+
+print_section() {
+    local title
+    title=$(terminal_label 36 "$1")
+    printf '\n%s\n------------------------\n' "$title"
+}
+
+print_status() {
+    local label
+    label=$(terminal_label "$1" "$2")
+    printf '%s：%s\n' "$label" "$3"
+}
+
 check_release_api_response() {
     local response="$1"
     local api_message=""
@@ -621,7 +645,7 @@ select_tuning_rtt() {
     local buffer_choice=""
 
     while true; do
-        echo -e "请选择 buffer 档位模式，并填写真实链接延迟："
+        print_section '选择缓冲区档位与 RTT'
         echo -e " 1. 亚太档位（通常 RTT < 100ms）"
         echo -e " 2. 美欧档位（通常 RTT 150-300ms）"
         echo -e " 3. 手动 RTT + 手动档位"
@@ -644,7 +668,7 @@ select_tuning_rtt() {
             3)
                 SMART_RTT_MS=$(read_required_positive_value "请输入真实链接延迟(ms，v2rayN 测出来的即可): ")
                 while true; do
-                    echo -e "请选择 buffer 档位模式："
+                    print_section '选择缓冲区档位'
                     echo -e " 1. 亚太档位"
                     echo -e " 2. 美欧档位"
                     echo -n -e "请选择 (1-2): "
@@ -974,7 +998,7 @@ persist_qdisc_module() {
 
     if [[ "$qdisc_name" == "fq" ]]; then
         sudo rm -f "$MODULES_CONF"
-        echo -e "更改已永久保存。"
+        print_status 32 '成功' '更改已永久保存。'
         return 0
     fi
 
@@ -1079,11 +1103,11 @@ ask_to_save() {
     NEW_ALGO=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)
     
     if [[ "$NEW_QDISC" == "$QDISC" && "$NEW_ALGO" == "$ALGO" ]]; then
-        echo -e "配置已立即生效！"
+        print_status 32 '成功' '配置已立即生效！'
         echo -e "  当前队列算法：$NEW_QDISC"
         echo -e "  当前拥塞控制：$NEW_ALGO"
     else
-        echo -e "配置应用失败！"
+        print_status 31 '失败' '配置应用失败！'
         echo -e "  队列算法期望：$QDISC，实际：$NEW_QDISC"
         echo -e "  拥塞控制期望：$ALGO，实际：$NEW_ALGO"
         echo -e "  可能原因：当前内核不支持 $QDISC 队列算法"
@@ -1100,7 +1124,7 @@ ask_to_save() {
 
         persist_qdisc_module "$QDISC"
     else
-        echo -e "未永久保存，重启后会恢复原设置。"
+        print_status 33 '警告' '未永久保存，重启后会恢复原设置。'
     fi
 }
 
@@ -1157,10 +1181,10 @@ get_expected_installed_version() {
 select_kernel_profile() {
     KERNEL_PROFILE="standard"
 
-    echo -e "请选择要安装的内核类型："
+    print_section '安装 BBR v3'
     echo -e " 1. BBR v3 标准版（推荐日常使用）"
     echo -e " 2. BBR v3 Max 激进吞吐版（自有链路测速实验）"
-    echo -n -e "请输入选项 (1-2，默认 1): "
+    printf '\n%s' '请选择内核类型 (1-2，默认 1): '
     read -r PROFILE_CHOICE
 
     case "${PROFILE_CHOICE:-1}" in
@@ -1172,7 +1196,7 @@ select_kernel_profile() {
             echo -e "警告：BBR v3 Max 会提高探测和窗口策略的进攻性，但仍保留 loss/ECN/inflight 反馈闭环；只适合自有链路吞吐测试，不建议日常生产使用。"
             ;;
         *)
-            echo -e "输入无效，取消安装。"
+            print_status 31 '失败' '输入无效，取消安装。'
             return 1
             ;;
     esac
@@ -1345,10 +1369,10 @@ update_bootloader() {
     if command -v update-grub &> /dev/null; then
         echo -e "检测到 GRUB，正在执行 update-grub..."
         if sudo update-grub; then
-            echo -e "GRUB 更新成功！"
+            print_status 32 '成功' 'GRUB 更新成功！'
             return 0
         else
-            echo -e "GRUB 更新失败！"
+            print_status 31 '失败' 'GRUB 更新失败！'
             return 1
         fi
     else
@@ -1387,7 +1411,7 @@ install_packages() {
             echo -e "操作完成。请记得稍后手动重启 ('sudo reboot') 来应用新内核。"
         fi
     else
-        echo -e "内核安装或引导验证失败。本次未完成，禁止直接重启。"
+        print_status 31 '失败' '内核安装或引导验证失败。本次未完成，禁止直接重启。'
         restore_bootloader_state "$backup_dir" || echo '恢复 GRUB 快照失败，请立即通过控制台检查引导配置。'
         echo -e "请查看上面的 dpkg/DKMS 错误；不要用跳过 DKMS 的方式强行完成安装。"
         return 1
@@ -1432,7 +1456,7 @@ install_latest_version() {
     BASE_URL="https://api.github.com/repos/${PROJECT_REPO}/releases"
     RELEASE_DATA=$(gh_api_get "$BASE_URL")
     if [[ -z "$RELEASE_DATA" ]]; then
-        echo -e "获取版本信息失败。请检查网络连接或 API 状态。"
+        print_status 31 '失败' '获取版本信息失败。请检查网络连接或 API 状态。'
         return 1
     fi
     check_release_api_response "$RELEASE_DATA" || return 1
@@ -1480,7 +1504,7 @@ install_specific_version() {
     BASE_URL="https://api.github.com/repos/${PROJECT_REPO}/releases"
     RELEASE_DATA=$(gh_api_get "$BASE_URL")
     if [[ -z "$RELEASE_DATA" ]]; then
-        echo -e "获取版本信息失败。请检查网络连接或 API 状态。"
+        print_status 31 '失败' '获取版本信息失败。请检查网络连接或 API 状态。'
         return 1
     fi
     check_release_api_response "$RELEASE_DATA" || return 1
@@ -1498,14 +1522,14 @@ install_specific_version() {
         return 1
     fi
 
-    echo -e "以下为适用于当前架构的 ${profile_label} 版本："
+    print_section "选择 ${profile_label} 版本"
     IFS=$'\n' read -rd '' -a TAG_ARRAY <<<"$MATCH_TAGS"
 
     for i in "${!TAG_ARRAY[@]}"; do
         echo -e " $((i+1)). ${TAG_ARRAY[$i]}"
     done
 
-    echo -n -e "请输入要安装的版本编号（例如 1）："
+    printf '\n%s' '请输入要安装的版本编号（例如 1）：'
     read -r CHOICE
     
     if ! [[ "$CHOICE" =~ ^[0-9]+$ ]] || (( CHOICE < 1 || CHOICE > ${#TAG_ARRAY[@]} )); then
@@ -1522,21 +1546,31 @@ install_specific_version() {
 
 # 一次输出完整菜单，减少终端刷新。
 print_main_menu() {
-    printf '%s\n\n%s' "BBR 管理脚本
+    local title
+    title=$(terminal_label 36 'BBR 管理脚本')
+    printf '%s\n\n%s' "$title
+------------------------
 维护：brian952700
 仓库：https://github.com/$PROJECT_REPO
 当前 TCP 拥塞控制算法：$CURRENT_ALGO
 当前队列管理算法：$CURRENT_QDISC
 
+安装与检查
  1. 安装或更新 BBR v3 (最新版)
  2. 指定版本安装
  3. 检查 BBR v3 状态
+
+网络调优
  4. 启用 BBR + FQ
  5. 启用 BBR + FQ_CODEL
  6. 启用 BBR + FQ_PIE
  7. 启用 BBR + CAKE
  8. 亚太机器 TCP 调优
+
+内核维护
  9. 卸载 BBR 内核
+
+网络配置
 10. BBR v3 智能带宽优化
 11. 清空网络优化配置
 12. BBR v3 疯批模式（极限测速挑战）
